@@ -1,36 +1,10 @@
 #!/bin/bash
 
-# 初始化二维数组的尺寸
-rows=10
-cols=10
 
-# 创建一个二维数组并初始化为空格
-
-declare -A map #用于场景绘制
-
-# 场景图层初始化
-for ((i=0; i<rows; i++)); do
-  for ((j=0; j<cols; j++)); do
-    map[$i,$j]="🟨"
-  done
-done
-
-# 设置起始位置
-x=0
-y=0
-new_x=0
-new_y=0
-map[$x,$y]="👦"  # 人物的初始位置
-
-# 保存未被捡起的物品
-save_item="🟨"
-
-# 背包系统
-declare -a backpack
-max_capacity=4
 
 # 随机放置元素
-for ((i=0; i<rows; i++)); do
+randomPut() {
+  for ((i=0; i<rows; i++)); do
   for ((j=0; j<cols; j++)); do
     rand=$(( RANDOM % 100 ))  # 生成 0-99 的随机数
     if (( rand < 20 )); then
@@ -48,6 +22,9 @@ for ((i=0; i<rows; i++)); do
     fi
   done
 done
+
+}
+
 
 # 函数：打印数组
 print_map() {
@@ -164,26 +141,64 @@ move_right() {
     map[$x,$y]="👦"  # 更新新位置
   fi
 }
-
-
 # ==========================以下为主函数部分==========================
-
-# 初始绘制
-print_map
-
-# 移动元素
-while true; do
-  read -n1 -s -p "使用 W/A/S/D 移动,Q 退出: " move
-  echo  # 换行
-  new_x=$x
-  new_y=$y
-  case $move in
-    w) move_up ;;  # 上
-    a) move_left ;;  # 左
-    s) move_down ;;  # 下
-    d) move_right ;;  # 右
-    q) break ;;  # 退出
-    *) echo "无效的输入!" ;;  # 无效输入
-  esac
+main(){
+  # 初始绘制
   print_map
-done
+
+  # 移动元素
+  while true; do
+    read -n1 -s -p "使用 W/A/S/D 移动,Q 退出: " move
+    echo  # 换行
+    new_x=$x
+    new_y=$y
+    case $move in
+      w) move_up ;;  # 上
+      a) move_left ;;  # 左
+      s) move_down ;;  # 下
+      d) move_right ;;  # 右
+      q) quit 
+        break;;  # 退出
+      
+      *) echo "无效的输入!" ;;  # 无效输入
+    esac
+    print_map
+  done
+}
+quit(){
+  echo "是否保存"
+  read -p "是否保存?(yes/no): " answer
+  if [[ "$answer" == "yes" ]]; then
+    #写入文件
+    save_game_data
+    echo "保存成功!"
+    
+  else
+    echo "退出游戏!"
+    
+  fi  
+    }
+# 保存文件函数
+save_game_data() {
+  # 构建数据字符串
+  local data_string=""
+  data_string+="rows=$rows\n"
+  data_string+="cols=$cols\n"
+  data_string+="x=$x\n"
+  data_string+="y=$y\n"
+  data_string+="new_x=$new_x\n"
+  data_string+="new_y=$new_y\n"
+  data_string+="save_item=$save_item\n"
+  data_string+="max_capacity=$max_capacity\n"
+  data_string+="backpack=${backpack[@]}\n"
+
+  # 保存地图数据
+  for ((i=0; i<rows; i++)); do
+    for ((j=0; j<cols; j++)); do
+      data_string+="$i,$j=${map[$i,$j]}\n"
+    done
+  done
+
+  # 保存到文件
+  echo -e "$data_string" > e:/linux/game_data.txt
+}
